@@ -9,4 +9,4 @@
     db_password: "{{ db_password }}"
   roles:
     - { role: server, when: "'server' in group_names" }
-    - { role: database, when: "'dadtabase' in group_names" }
+    - { role: db, when: "'db' in group_names" }
