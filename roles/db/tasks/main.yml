@@ -4,6 +4,11 @@
     name: postgresql
     state: present
 
+- name: Install psycopg2
+  apt:
+    name: python3-psycopg2
+    state: present
+
 - name: Create PostgreSQL database
   postgresql_db:
     name: "{{ db_name }}"
@@ -12,6 +17,6 @@
 - name: Create PostgreSQL user
   postgresql_user:
     name: "{{ db_user }}"
-    password: "{{ db_password }}"
+    password: "{{ db_pass }}"
     priv: "ALL"
     state: present
