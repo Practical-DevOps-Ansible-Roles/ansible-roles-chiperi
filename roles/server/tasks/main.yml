@@ -1,0 +1,28 @@
+---
+- name: Install Apache and dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - apache2
+    - php
+    - libapache2-mod-php
+    - unzip
+
+- name: Deploy Laravel application
+  git:
+    repo: https://github.com/Practical-DevOps-Ansible-Roles/ansible-roles-chiperi.git
+    dest: /var/www/html/app
+
+- name: Configure Apache
+  template:
+    src: apache.conf.j2
+    dest: /etc/apache2/sites-available/000-default.conf
+
+- name: Enable Apache site
+  command: a2ensite 000-default.conf
+
+- name: Restart Apache
+  service:
+    name: apache2
+    state: restarted
