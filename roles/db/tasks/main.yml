@@ -22,7 +22,7 @@
 
 - name: Allow PostgreSQL to listen on all addresses
   community.postgresql.postgresql_alter_system:
-    parameter: listen_addresses
+    param: listen_addresses
     value: "*"
   become_user: postgres
   notify: Restart PostgreSQL
