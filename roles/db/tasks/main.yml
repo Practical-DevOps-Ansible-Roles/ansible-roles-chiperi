@@ -1,22 +1,67 @@
 ---
-- name: Install PostgreSQL
-  apt:
+- name: Install PostgreSQL packages
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+    update_cache: yes
+
+- name: Ensure PostgreSQL is running
+  ansible.builtin.service:
     name: postgresql
-    state: present
+    state: started
+    enabled: true
 
-- name: Install psycopg2
-  apt:
-    name: python3-psycopg2
-    state: present
+- name: Get pg_hba.conf path
+  ansible.builtin.command: psql -t -P format=unaligned -c "SHOW hba_file;"
+  become_user: postgres
+  register: hba_file
+  changed_when: false
 
-- name: Create PostgreSQL database
-  postgresql_db:
-    name: "{{ db_name }}"
+- name: Allow PostgreSQL to listen on all addresses
+  community.postgresql.postgresql_alter_system:
+    parameter: listen_addresses
+    value: "*"
+  become_user: postgres
+  notify: Restart PostgreSQL
+
+- name: Allow remote connections (IPv4)
+  community.postgresql.postgresql_pg_hba:
+    dest: "{{ hba_file.stdout }}"
+    contype: host
+    databases: all
+    users: all
+    address: 0.0.0.0/0
+    method: md5
     state: present
+  become_user: postgres
+  notify: Restart PostgreSQL
+
+- name: Allow remote connections (IPv6)
+  community.postgresql.postgresql_pg_hba:
+    dest: "{{ hba_file.stdout }}"
+    contype: host
+    databases: all
+    users: all
+    address: ::/0
+    method: md5
+    state: present
+  become_user: postgres
+  notify: Restart PostgreSQL
 
 - name: Create PostgreSQL user
-  postgresql_user:
+  community.postgresql.postgresql_user:
     name: "{{ db_user }}"
     password: "{{ db_pass }}"
-    priv: "ALL"
+    encrypted: true
     state: present
+  become_user: postgres
+
+- name: Create application database
+  community.postgresql.postgresql_db:
+    name: "{{ db_name }}"
+    owner: "{{ db_user }}"
+    state: present
+  become_user: postgres

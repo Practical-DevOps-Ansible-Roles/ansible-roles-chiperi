@@ -1,28 +1,41 @@
 ---
-- name: Install Apache and dependencies
-  apt:
-    name: "{{ item }}"
+- name: Install Apache and PHP dependencies
+  ansible.builtin.apt:
+    name:
+      - apache2
+      - php
+      - libapache2-mod-php
+      - php-pgsql
+      - php-xml
+      - php-mbstring
+      - php-curl
+      - php-zip
+      - unzip
+      - git
     state: present
-  loop:
-    - apache2
-    - php
-    - libapache2-mod-php
-    - unzip
+    update_cache: yes
 
 - name: Deploy Laravel application
-  git:
-    repo: https://github.com/Practical-DevOps-Ansible-Roles/ansible-roles-chiperi.git
+  ansible.builtin.git:
+    repo: https://github.com/Practical-DevOps/app-for-devops.git
     dest: /var/www/html/app
 
 - name: Configure Apache
-  template:
+  ansible.builtin.template:
     src: apache.conf.j2
     dest: /etc/apache2/sites-available/000-default.conf
 
+- name: Enable Apache rewrite module
+  ansible.builtin.command: a2enmod rewrite
+  args:
+    creates: /etc/apache2/mods-enabled/rewrite.load
+
 - name: Enable Apache site
-  command: a2ensite 000-default.conf
+  ansible.builtin.command: a2ensite 000-default.conf
+  args:
+    creates: /etc/apache2/sites-enabled/000-default.conf
 
 - name: Restart Apache
-  service:
+  ansible.builtin.service:
     name: apache2
     state: restarted

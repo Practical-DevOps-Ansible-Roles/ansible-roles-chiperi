@@ -1,12 +1,22 @@
 ---
-- name: Configure web and database servers
-  hosts: all
+- name: Configure web server
+  hosts: server
   become: true
   vars:
     db_host: "{{ db_host }}"
     db_name: "{{ db_name }}"
     db_user: "{{ db_user }}"
-    db_password: "{{ db_password }}"
+    db_pass: "{{ db_pass }}"
   roles:
-    - { role: server, when: "'server' in group_names" }
-    - { role: db, when: "'db' in group_names" }
+    - server
+
+- name: Configure database server
+  hosts: db
+  become: true
+  vars:
+    db_host: "{{ db_host }}"
+    db_name: "{{ db_name }}"
+    db_user: "{{ db_user }}"
+    db_pass: "{{ db_pass }}"
+  roles:
+    - db
