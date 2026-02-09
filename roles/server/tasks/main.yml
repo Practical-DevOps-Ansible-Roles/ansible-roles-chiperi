@@ -6,12 +6,15 @@
       - php
       - libapache2-mod-php
       - php-pgsql
-      - php-xml
+      - php-cli
       - php-mbstring
       - php-curl
       - php-zip
+      - php-bcmath
+      - php-xml
       - unzip
       - git
+      - composer
     state: present
     update_cache: yes
 
@@ -19,6 +22,72 @@
   ansible.builtin.git:
     repo: https://github.com/Practical-DevOps/app-for-devops.git
     dest: /var/www/html/app
+
+- name: Ensure application ownership
+  ansible.builtin.file:
+    path: /var/www/html/app
+    state: directory
+    owner: www-data
+    group: www-data
+    recurse: true
+
+- name: Ensure application .env exists
+  ansible.builtin.copy:
+    src: /var/www/html/app/.env.example
+    dest: /var/www/html/app/.env
+    remote_src: true
+    owner: www-data
+    group: www-data
+    mode: "0640"
+    force: false
+
+- name: Configure application environment
+  ansible.builtin.lineinfile:
+    path: /var/www/html/app/.env
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  loop:
+    - { key: "APP_URL", value: "http://{{ inventory_hostname }}" }
+    - { key: "DB_CONNECTION", value: "pgsql" }
+    - { key: "DB_HOST", value: "{{ db_host }}" }
+    - { key: "DB_PORT", value: "5432" }
+    - { key: "DB_DATABASE", value: "{{ db_name }}" }
+    - { key: "DB_USERNAME", value: "{{ db_user }}" }
+    - { key: "DB_PASSWORD", value: "{{ db_pass }}" }
+
+- name: Install PHP dependencies with Composer
+  ansible.builtin.command: composer install --no-dev --optimize-autoloader
+  args:
+    chdir: /var/www/html/app
+    creates: /var/www/html/app/vendor/autoload.php
+
+- name: Generate application key
+  ansible.builtin.command: php artisan key:generate --force
+  args:
+    chdir: /var/www/html/app
+
+- name: Wait for database to be reachable
+  ansible.builtin.wait_for:
+    host: "{{ db_host }}"
+    port: 5432
+    timeout: 60
+
+- name: Run database migrations
+  ansible.builtin.command: php artisan migrate --force
+  args:
+    chdir: /var/www/html/app
+
+- name: Ensure Laravel writable directories permissions
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: "0775"
+    recurse: true
+  loop:
+    - /var/www/html/app/storage
+    - /var/www/html/app/bootstrap/cache
 
 - name: Configure Apache
   ansible.builtin.template:
