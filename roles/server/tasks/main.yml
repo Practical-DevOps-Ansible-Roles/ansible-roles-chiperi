@@ -48,12 +48,17 @@
     line: "{{ item.key }}={{ item.value }}"
   loop:
     - { key: "APP_URL", value: "http://{{ inventory_hostname }}" }
+    - { key: "APP_ENV", value: "production" }
+    - { key: "APP_DEBUG", value: "false" }
     - { key: "DB_CONNECTION", value: "pgsql" }
     - { key: "DB_HOST", value: "{{ db_host }}" }
     - { key: "DB_PORT", value: "5432" }
     - { key: "DB_DATABASE", value: "{{ db_name }}" }
     - { key: "DB_USERNAME", value: "{{ db_user }}" }
     - { key: "DB_PASSWORD", value: "{{ db_pass }}" }
+    - { key: "SESSION_DRIVER", value: "file" }
+    - { key: "CACHE_DRIVER", value: "file" }
+    - { key: "QUEUE_CONNECTION", value: "sync" }
 
 - name: Install PHP dependencies with Composer
   ansible.builtin.command: composer install --no-dev --optimize-autoloader
