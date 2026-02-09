@@ -61,6 +61,26 @@
     chdir: /var/www/html/app
     creates: /var/www/html/app/vendor/autoload.php
 
+- name: Clear Laravel caches
+  ansible.builtin.command: php artisan config:clear
+  args:
+    chdir: /var/www/html/app
+
+- name: Clear Laravel cache
+  ansible.builtin.command: php artisan cache:clear
+  args:
+    chdir: /var/www/html/app
+
+- name: Clear Laravel route cache
+  ansible.builtin.command: php artisan route:clear
+  args:
+    chdir: /var/www/html/app
+
+- name: Clear Laravel view cache
+  ansible.builtin.command: php artisan view:clear
+  args:
+    chdir: /var/www/html/app
+
 - name: Generate application key
   ansible.builtin.command: php artisan key:generate --force
   args:
@@ -72,8 +92,8 @@
     port: 5432
     timeout: 60
 
-- name: Run database migrations
-  ansible.builtin.command: php artisan migrate --force
+- name: Run database migrations and seed data
+  ansible.builtin.command: php artisan migrate --force --seed
   args:
     chdir: /var/www/html/app
 
